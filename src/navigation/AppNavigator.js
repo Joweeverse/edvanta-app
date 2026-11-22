@@ -23,6 +23,7 @@ import AddLessonScreen from '../screens/AddLessonScreen';
 import CreateQuizScreen from '../screens/CreateQuizScreen';
 import DiscussionScreen from '../screens/DiscussionScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -73,6 +74,7 @@ export default function AppNavigator() {
             <Stack.Screen name="ClassDetail" component={ClassDetailScreen} options={{ title: 'Detail Kelas' }} />
             <Stack.Screen name="Lesson" component={LessonScreen} options={{ title: 'Materi' }} />
             <Stack.Screen name="Quiz" component={QuizScreen} options={{ title: 'Kuis' }} />
+            <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profil' }} />
             <Stack.Screen name="Discussion" component={DiscussionScreen} options={{ title: 'Diskusi' }} />
             <Stack.Screen name="CreateClass" component={CreateClassScreen} options={{ title: 'Kelas Baru' }} />
             <Stack.Screen name="MentorClass" component={MentorClassScreen} options={{ title: 'Kelola Kelas' }} />

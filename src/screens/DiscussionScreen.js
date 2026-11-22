@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import * as Api from '../services/ApiService';
 
 // Diskusi per materi: kolom publik dan pesan privat antara siswa dan mentor kelas.
-export default function DiscussionScreen({ route }) {
+export default function DiscussionScreen({ route, navigation }) {
   const { lesson, classItem } = route.params;
   const { session } = useAuth();
   const isMentor = session.user.id === classItem.mentor;
@@ -61,7 +61,9 @@ export default function DiscussionScreen({ route }) {
             const mine = item.user === session.user.id;
             return (
               <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '85%', backgroundColor: mine ? colors.selectedBg : colors.card, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, gap: 4 }}>
-                <Text style={{ fontWeight: '700', color: colors.accent, fontSize: 12 }}>
+                <Text
+                  onPress={() => navigation.navigate('UserProfile', { userId: item.user })}
+                  style={{ fontWeight: '700', color: colors.accent, fontSize: 12 }}>
                   {author}{item.is_private ? ' · privat' : ''}
                 </Text>
                 <Text style={{ color: colors.text }}>{item.message}</Text>

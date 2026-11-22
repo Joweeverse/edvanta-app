@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View, Alert, TouchableOpacity } from 'react-native';
 import { Button, Loading, ErrorState, EmptyState, ProgressBar, Heading, colors } from '../components/ui';
 import { useAsync } from '../components/useAsync';
@@ -14,18 +14,20 @@ export default function ClassDetailScreen({ route, navigation }) {
   const isMentor = session.user.role === 'mentor';
 
   const { loading, error, data, reload } = useAsync(async () => {
-    const [lessons, enrollments] = await Promise.all([
-      Api.getLessons(session.token, classItem.id),
-      isMentor ? Promise.resolve([]) : Api.getMyEnrollments(session.token, session.user.id),
-    ]);
+    const lessons = await Api.getLessons(session.token, classItem.id);
+    const enrollments = isMentor ? [] : await Api.getMyEnrollments(session.token, session.user.id);
+    const mentorUser = await Api.getMe(session.token, classItem.mentor).catch(() => null);
     const enrollment = enrollments.find((e) => e.class === classItem.id) || null;
-    return { lessons, enrollment };
+    return { lessons, enrollment, mentorUser };
   }, [classItem.id]);
+
+  // Muat ulang tiap kali layar kembali mendapat fokus (mis. setelah mengerjakan kuis).
+  useEffect(() => navigation.addListener('focus', reload), [navigation, reload]);
 
   if (loading && !data) return <Loading />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
 
-  const { lessons, enrollment } = data;
+  const { lessons, enrollment, mentorUser } = data;
   const done = enrollment ? enrollment.completed_lessons || [] : [];
   const canOpen = isOwner || !!enrollment;
 
@@ -58,6 +60,11 @@ export default function ClassDetailScreen({ route, navigation }) {
     <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 12 }}>
       <Heading>{classItem.title}</Heading>
       <Text style={{ color: colors.muted }}>{classItem.description}</Text>
+      {mentorUser ? (
+        <Text style={{ color: colors.accent }} onPress={() => navigation.navigate('UserProfile', { userId: mentorUser.id })}>
+          Mentor: {mentorUser.name || 'Mentor'}
+        </Text>
+      ) : null}
 
       {isOwner ? (
         <Button title="Kelola kelas ini" onPress={() => navigation.navigate('MentorClass', { classItem })} />
@@ -75,7 +82,7 @@ export default function ClassDetailScreen({ route, navigation }) {
         <Button title={busy ? 'Memproses...' : 'Daftar ke kelas ini'} onPress={doEnroll} disabled={busy} />
       )}
 
-      <Text style={{ fontWeight: '700', marginTop: 8, color: colors.text }}>Materi</Text>
+      <Text style={{ fontWeight: '700', marginTop: 8, color: colors.text }}>Materi ({lessons.length})</Text>
       {lessons.length === 0 ? (
         <EmptyState message="Belum ada materi." />
       ) : (
