@@ -50,3 +50,31 @@ test('sesi: simpan lalu muat mengembalikan null bila token kosong', async () => 
   await Api.saveSession('T', { id: 'u1' });
   expect(await Api.loadSession()).toBeNull();
 });
+
+test('createQuiz mengirim soal dengan pilihan terisi saja', async () => {
+  fetch.mockReturnValueOnce(ok({ id: 'q1' }));
+  await Api.createQuiz('T', 'L1', { title: ' K ', passing_score: '70', questions: [{ question: ' A? ', options: ['a', 'b', '', ''], answer: 0 }] });
+  const body = JSON.parse(fetch.mock.calls[0][1].body);
+  expect(body.passing_score).toBe(70);
+  expect(body.questions[0].options).toEqual(['a', 'b']);
+  expect(body.lesson).toBe('L1');
+});
+
+test('postDiscussion privat menyertakan recipient', async () => {
+  fetch.mockReturnValueOnce(ok({ id: 'd1' }));
+  await Api.postDiscussion('T', { lesson: 'L', user: 'U', message: ' hi ', isPrivate: true, recipient: 'M' });
+  const body = JSON.parse(fetch.mock.calls[0][1].body);
+  expect(body).toEqual({ lesson: 'L', user: 'U', message: 'hi', is_private: true, recipient: 'M' });
+});
+
+test('getCertificate memakai POST ke endpoint sertifikat', async () => {
+  fetch.mockReturnValueOnce(ok({ code: 'EDV-X' }));
+  await Api.getCertificate('T', 'C1');
+  expect(fetch.mock.calls[0][0]).toMatch(/\/classes\/C1\/certificate$/);
+  expect(fetch.mock.calls[0][1].method).toBe('POST');
+});
+
+test('certificateTemplateUrl menyusun URL berkas kelas', () => {
+  expect(Api.certificateTemplateUrl({ id: 'c1' })).toBeNull();
+  expect(Api.certificateTemplateUrl({ id: 'c1', certificate_template: 'a b.png' })).toMatch(/\/files\/classes\/c1\/a%20b\.png$/);
+});

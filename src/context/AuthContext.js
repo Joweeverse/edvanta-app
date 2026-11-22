@@ -24,13 +24,22 @@ export function AuthProvider({ children }) {
     setSession(s);
   }, []);
 
+  const updateUser = useCallback(async (user) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, user: { ...prev.user, ...user } };
+      Api.saveSession(next.token, next.user).catch(() => {});
+      return next;
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
     await Api.clearSession();
     setSession(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, booting, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, booting, signIn, signUp, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

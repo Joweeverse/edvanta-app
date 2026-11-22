@@ -67,10 +67,10 @@ export async function login(email, password) {
   return { token: d.token, user: d.record };
 }
 
-export async function register({ name, email, password, passwordConfirm }) {
+export async function register({ name, email, password, passwordConfirm, role = 'student' }) {
   await request(`${API_URL}/auth/records`, {
     method: 'POST',
-    body: { name: name.trim(), email: email.trim(), password, passwordConfirm, role: 'student' },
+    body: { name: name.trim(), email: email.trim(), password, passwordConfirm, role },
   });
   return login(email, password);
 }
@@ -119,6 +119,128 @@ export async function submitQuiz(token, quizId, answers) {
     method: 'POST',
     headers: authHeader(token),
     body: { answers },
+  });
+}
+
+// ---------- Mentor ----------
+export async function getMyClasses(token, mentorId) {
+  const d = await request(
+    `${API_URL}/classes?filter=${encodeURIComponent(`mentor="${mentorId}"`)}&sort=-created&perPage=100`,
+    { headers: authHeader(token) }
+  );
+  return d.items || [];
+}
+
+export async function createClass(token, mentorId, { title, category, description }) {
+  return request(`${API_URL}/classes`, {
+    method: 'POST',
+    headers: authHeader(token),
+    body: { title: title.trim(), category: category.trim(), description: description.trim(), mentor: mentorId },
+  });
+}
+
+export async function createLesson(token, classId, order, { title, content, video_url }) {
+  return request(`${API_URL}/lessons`, {
+    method: 'POST',
+    headers: authHeader(token),
+    body: { class: classId, title: title.trim(), order, content: (content || '').trim(), video_url: (video_url || '').trim() },
+  });
+}
+
+export async function getQuizzesForClass(token, classId) {
+  const d = await request(
+    `${API_URL}/quizzes?filter=${encodeURIComponent(`lesson.class="${classId}"`)}&perPage=100`,
+    { headers: authHeader(token) }
+  );
+  return d.items || [];
+}
+
+export async function createQuiz(token, lessonId, { title, passing_score, questions }) {
+  return request(`${API_URL}/quizzes`, {
+    method: 'POST',
+    headers: authHeader(token),
+    body: {
+      lesson: lessonId,
+      title: title.trim(),
+      passing_score: Number(passing_score),
+      questions: questions.map((q) => ({
+        question: q.question.trim(),
+        options: q.options.map((o) => o.trim()).filter(Boolean),
+        answer: q.answer,
+      })),
+    },
+  });
+}
+
+export async function getClassStats(token, classId) {
+  return request(`${API_URL}/classes/${classId}/stats`, { headers: authHeader(token) });
+}
+
+// ---------- Sertifikat, diskusi, profil ----------
+export async function getClass(token, classId) {
+  return request(`${API_URL}/classes/${classId}`, { headers: authHeader(token) });
+}
+
+// URL gambar template sertifikat buatan mentor (null bila belum ada).
+export function certificateTemplateUrl(cls) {
+  if (!cls || !cls.certificate_template) return null;
+  return `${API_URL}/files/classes/${cls.id}/${encodeURIComponent(cls.certificate_template)}`;
+}
+
+// Mentor mengunggah gambar template (multipart). asset: hasil ImagePicker.
+export function uploadCertificateTemplate(token, classId, asset) {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append('certificate_template', {
+      uri: asset.uri,
+      name: asset.name || asset.fileName || 'template.jpg',
+      type: asset.mimeType || 'image/jpeg',
+    });
+    const xhr = new XMLHttpRequest();
+    xhr.open('PATCH', `${API_URL}/classes/${classId}`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.timeout = 60000;
+    xhr.onload = () => {
+      let data = null;
+      try { data = JSON.parse(xhr.responseText); } catch { data = null; }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+      else reject(new ApiError((data && (data.error || data.message)) || `Unggah gagal (${xhr.status})`, xhr.status));
+    };
+    xhr.onerror = () => reject(new ApiError('Tidak dapat terhubung ke server', 0));
+    xhr.ontimeout = () => reject(new ApiError('Unggah terlalu lama, coba gambar yang lebih kecil', 0));
+    xhr.send(form);
+  });
+}
+
+export async function getCertificate(token, classId) {
+  return request(`${API_URL}/classes/${classId}/certificate`, { method: 'POST', headers: authHeader(token) });
+}
+
+export async function getDiscussions(token, lessonId) {
+  const d = await request(
+    `${API_URL}/discussions?filter=${encodeURIComponent(`lesson="${lessonId}"`)}&sort=created&expand=user&perPage=100`,
+    { headers: authHeader(token) }
+  );
+  return d.items || [];
+}
+
+export async function postDiscussion(token, { lesson, user, message, isPrivate, recipient }) {
+  return request(`${API_URL}/discussions`, {
+    method: 'POST',
+    headers: authHeader(token),
+    body: { lesson, user, message: message.trim(), is_private: !!isPrivate, ...(isPrivate && recipient ? { recipient } : {}) },
+  });
+}
+
+export async function getMe(token, userId) {
+  return request(`${API_URL}/auth/records/${userId}`, { headers: authHeader(token) });
+}
+
+export async function updateProfile(token, userId, { name, bio, portfolio_url }) {
+  return request(`${API_URL}/auth/records/${userId}`, {
+    method: 'PATCH',
+    headers: authHeader(token),
+    body: { name: name.trim(), bio: (bio || '').trim(), portfolio_url: (portfolio_url || '').trim() },
   });
 }
 

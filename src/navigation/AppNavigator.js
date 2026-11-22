@@ -16,6 +16,13 @@ import MyClassesScreen from '../screens/MyClassesScreen';
 import ExploreScreen from '../screens/ExploreScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import FavoritScreen from '../screens/FavoritScreen';
+import MentorClassesScreen from '../screens/MentorClassesScreen';
+import MentorClassScreen from '../screens/MentorClassScreen';
+import CreateClassScreen from '../screens/CreateClassScreen';
+import AddLessonScreen from '../screens/AddLessonScreen';
+import CreateQuizScreen from '../screens/CreateQuizScreen';
+import DiscussionScreen from '../screens/DiscussionScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -32,6 +39,8 @@ const ICONS = { Kelas: 'book', Favorit: 'heart', 'Kelas Saya': 'school', Jelajah
 const Tab = createBottomTabNavigator();
 
 function Tabs() {
+  const { session } = useAuth();
+  const isMentor = session.user.role === 'mentor';
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -44,7 +53,8 @@ function Tabs() {
     >
       <Tab.Screen name="Kelas" component={ClassListScreen} />
       <Tab.Screen name="Favorit" component={FavoritScreen} />
-      <Tab.Screen name="Kelas Saya" component={MyClassesScreen} />
+      <Tab.Screen name="Kelas Saya" component={isMentor ? MentorClassesScreen : MyClassesScreen}
+        options={{ tabBarLabel: isMentor ? 'Kelas Diampu' : 'Kelas Saya' }} />
       <Tab.Screen name="Jelajah" component={ExploreScreen} />
       <Tab.Screen name="Profil" component={ProfileScreen} />
     </Tab.Navigator>
@@ -63,6 +73,12 @@ export default function AppNavigator() {
             <Stack.Screen name="ClassDetail" component={ClassDetailScreen} options={{ title: 'Detail Kelas' }} />
             <Stack.Screen name="Lesson" component={LessonScreen} options={{ title: 'Materi' }} />
             <Stack.Screen name="Quiz" component={QuizScreen} options={{ title: 'Kuis' }} />
+            <Stack.Screen name="Discussion" component={DiscussionScreen} options={{ title: 'Diskusi' }} />
+            <Stack.Screen name="CreateClass" component={CreateClassScreen} options={{ title: 'Kelas Baru' }} />
+            <Stack.Screen name="MentorClass" component={MentorClassScreen} options={{ title: 'Kelola Kelas' }} />
+            <Stack.Screen name="AddLesson" component={AddLessonScreen} options={{ title: 'Tambah Materi' }} />
+            <Stack.Screen name="CreateQuiz" component={CreateQuizScreen} options={{ title: 'Buat Kuis' }} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profil' }} />
           </>
         ) : (
           <>

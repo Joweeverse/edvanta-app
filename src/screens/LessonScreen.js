@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import * as Api from '../services/ApiService';
 
 export default function LessonScreen({ route, navigation }) {
-  const { lesson } = route.params;
+  const { lesson, classItem } = route.params;
   const { session } = useAuth();
   const { loading, error, data: quiz, reload } = useAsync(
     () => Api.getQuizForLesson(session.token, lesson.id),
@@ -21,11 +21,12 @@ export default function LessonScreen({ route, navigation }) {
       <Heading>{lesson.title}</Heading>
       <Text style={{ color: colors.text, lineHeight: 22 }}>{lesson.content || 'Materi ini belum memiliki isi teks.'}</Text>
       {lesson.video_url ? <Button title="Buka video" secondary onPress={() => Linking.openURL(lesson.video_url)} /> : null}
-      {quiz ? (
+      {quiz && session.user.id !== classItem.mentor ? (
         <Button title={`Kerjakan kuis: ${quiz.title}`} onPress={() => navigation.navigate('Quiz', { quiz, lesson })} />
-      ) : (
+      ) : !quiz ? (
         <Text style={{ color: colors.muted }}>Materi ini belum memiliki kuis.</Text>
-      )}
+      ) : null}
+      <Button title="Diskusi materi ini" secondary onPress={() => navigation.navigate('Discussion', { lesson, classItem })} />
     </ScrollView>
   );
 }
